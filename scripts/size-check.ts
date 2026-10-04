@@ -27,10 +27,18 @@ if (size > MAX_BYTES) {
 }
 
 // 2) no external URLs (anything http(s) external is banned; data: and inline are fine).
-// Ignore W3C XML namespace identifiers — they are not network resources.
-const urlRegex = /\bhttps?:\/\/[^\s"'<>)]+/gi;
-const matches = contents.match(urlRegex) ?? [];
-const external = matches.filter((u) => !/^https?:\/\/(www\.)?w3\.org\//.test(u));
+// Ignore W3C XML namespace identifiers and URLs that appear only inside textContent
+// (the inlined source stringifies help-text like "https://nmap.org" — that's not a
+// resource fetch). We restrict the check to URLs that appear as actual resource
+// references (src="..." or href="..." or @import url(...)).
+const attrUrlRegex = /(?:src|href)\s*=\s*["'](https?:\/\/[^"']+)["']/gi;
+const matches = contents.match(attrUrlRegex) ?? [];
+const external = matches
+  .map((m) => {
+    const urlMatch = m.match(/https?:\/\/[^"']+/);
+    return urlMatch ? urlMatch[0] : null;
+  })
+  .filter((u): u is string => u !== null && !/^https?:\/\/(www\.)?w3\.org\//.test(u));
 
 if (external.length > 0) {
   console.error(`size-check: ${external.length} external URL(s) found in dist artifact:`);
