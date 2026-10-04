@@ -1,0 +1,40 @@
+{
+  "name": "grey-heron",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "GREY HERON — a story-driven, browser-based simulator that teaches real offensive, defensive and OSINT skills. Offline. Deterministic. Single-file build.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run boundaries && npm run content-lint && npm run economy-check && npm run build && npm run size-check",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "boundaries": "tsx scripts/boundaries.ts",
+    "content-lint": "tsx scripts/content-lint.ts",
+    "economy-check": "tsx scripts/economy-check.ts",
+    "size-check": "tsx scripts/size-check.ts",
+    "export-lint": "tsx scripts/export-lint.ts",
+    "contrast-check": "tsx scripts/contrast-check.ts",
+    "repl": "tsx scripts/repl.ts"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.2",
+    "@types/node": "^22.10.5",
+    "@vitest/coverage-v8": "^2.1.8",
+    "eslint": "^9.18.0",
+    "happy-dom": "^16.5.3",
+    "preact": "^10.25.4",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.20.0",
+    "vite": "^5.4.11",
+    "vite-plugin-singlefile": "^2.1.0",
+    "vitest": "^2.1.8"
+  }
+}
