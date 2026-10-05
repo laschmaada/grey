@@ -25,4 +25,16 @@ M4 — done
 - content-linter stub wired into verify
 - 80 total tests passing
 
-M5+ — deferred per BLOCKERS.md (scope-cut ladder, recorded)
+M5 — done (v0.2.0)
+- traffic generator + real .pcap writer (Ethernet/IPv4/TCP/UDP/ICMP, big-endian, LCG payload fill)
+- tshark sim with display-filter subset (&&, ||, !, contains, ip/tcp/udp/icmp/dns/http)
+- Meridian Console: 20 alerts seeded (3 true positives), triage --tp/--fp, log search
+- msfconsole prompt stack with 4 modules (portscan/tcp, vsftpd_234_backdoor, ssh_version, ftp_version)
+- Snort rule engine (header + msg + content + nocase + flags + sid/rev + classtype; CIDR/24)
+- a1-twenty-alarms, a1-recon-console, a1-mail-server, a1-knock-knock all complete
+- 122 tests passing (added: m5-traffic, m5-tshark, m5-snort, m5-meridian, m5-msf, m5-missions)
+- dist/index.html 52.5 kB (5.0% of 2.5 MB budget)
+- Cuts logged in BLOCKERS.md: M5-T02/T09/T10/T11/T12 deferred to v0.3.
+
+M6+ — DEFERRED per BLOCKERS.md (Act 2 onward, including Active Defense plumb, Act 3
+Red+Blue, Act 4 + finales + Mosaic, hardening, perf budget, FINAL_REPORT polish)

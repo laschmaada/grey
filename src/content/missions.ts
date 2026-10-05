@@ -26,7 +26,7 @@ export const MISSIONS: readonly MissionStub[] = [
   { id: 'a1-mail-server', act: 1, track: 'shared', title: 'The Mail Server', payoutBase: 110, requiredTools: [], status: 'complete', milestone: 'M5' },
   { id: 'a1-recon-console', act: 1, track: 'shared', title: 'Recon Console', payoutBase: 130, requiredTools: [], status: 'complete', milestone: 'M5' },
   { id: 'a1-twenty-alarms', act: 1, track: 'shared', title: 'Twenty Alarms', payoutBase: 140, requiredTools: ['wireshark'], status: 'complete', milestone: 'M5' },
-  { id: 'a1-knock-knock', act: 1, track: 'shared', title: 'Knock Knock', payoutBase: 160, requiredTools: [], status: 'complete', milestone: 'M4' },
+  { id: 'a1-knock-knock', act: 1, track: 'shared', title: 'Knock Knock', payoutBase: 160, requiredTools: [], status: 'complete', milestone: 'M5' },
   // Act 2
   { id: 'a2-harvest', act: 2, track: 'shared', title: 'Harvest', payoutBase: 200, requiredTools: ['theharvester'], status: 'stub', milestone: 'M6' },
   { id: 'a2-first-blood', act: 2, track: 'shared', title: 'First Blood', payoutBase: 280, requiredTools: ['netcat'], status: 'stub', milestone: 'M6' },

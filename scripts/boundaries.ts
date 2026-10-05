@@ -27,10 +27,11 @@ const FORBIDDEN_IMPORTS = [
   /from\s+['"]react-dom['"]/,
 ];
 
+// Avoid matching identifier `window` in identifier context. We want a `\bwindow.` member access.
 const FORBIDDEN_GLOBALS = [
   /\bdocument\b/,
-  /\bwindow\b(?!\s*[!?]?\s*[:.])/,
-  /\bnavigator\b/,
+  /\bwindow\.\w/,
+  /\bnavigator\.\w/,
   /\blocalStorage\b/,
   /\bsessionStorage\b/,
   /\bindexedDB\b/,

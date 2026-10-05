@@ -5,6 +5,9 @@
 
 import '../sims/nmap.js';
 import '../sims/msf.js';
+import '../sims/tshark.js';
+import '../engine/msfconsole.js';
+import '../engine/meridian.js';
 import '../content/missions_runtime.js';
 import { register as regCmd } from '../engine/registry.js';
 import { Session } from '../engine/session.js';
