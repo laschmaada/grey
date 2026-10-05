@@ -569,4 +569,419 @@ registerMission({
   ],
 });
 
+// ---------------------------------------------------------------------------
+// M6-T07: Act 2 missions.
+// ---------------------------------------------------------------------------
+
+// a2-harvest — theHarvester sim, find emails for the target domain.
+const a2HarvestWorld = (seed: number): World => ({
+  seed,
+  hosts: [
+    {
+      id: 'grid-gw',
+      ip: '192.0.2.10',
+      hostname: 'gw.grid.test',
+      os: 'Linux',
+      inScope: true,
+      services: [{ port: 80, proto: 'tcp', name: 'http', state: 'open' }],
+    },
+  ],
+  vulns: [],
+  creds: [],
+  edges: [],
+  dns: [
+    { name: 'grid.test', type: 'A', value: '192.0.2.10' },
+    { name: 'mail.grid.test', type: 'A', value: '198.51.100.25' },
+    { name: 'admin.grid.test', type: 'A', value: '192.0.2.30' },
+    { name: 'docs.grid.test', type: 'A', value: '192.0.2.31' },
+  ],
+  web: { rootUrl: 'http://gw.grid.test/', nodes: [], links: [], index: new Map() },
+  docs: [{ id: 'security@grid.test', path: '/contact', content: '' }],
+  defenses: { hostIds: [] },
+  pinned: [],
+});
+
+registerMission({
+  id: 'a2-harvest',
+  title: 'Harvest',
+  brief: 'Find contact email addresses for the target domain.',
+  primer:
+    'theHarvester enumerates emails / subdomains from public sources. Try `theharvester -d grid.test -b all`.',
+  report: '## Harvested Contacts\n- list the discovered emails',
+  lab: 'In your lab, run `theHarvester -d example.test -b all` against a real domain.',
+  world: a2HarvestWorld,
+  goals: { kind: 'fact_found', key: 'harvested:emails:>=2' },
+  scope: {
+    inScope: ['grid-gw'],
+    outOfScope: [],
+    permitted: ['theharvester', 'certlog', 'nmap'],
+    forbidden: ['exploit-rce'],
+    dataRule: 'no exfiltration',
+  },
+  transcripts: [
+    {
+      name: 'route-a-theharvester',
+      seed: 1234,
+      steps: [
+        { command: 'theharvester -d grid.test -b all', afterMs: 1500, expectFacts: ['harvested:emails:>=2'] },
+      ],
+      expectedGoalsSatisfied: true,
+    },
+    {
+      name: 'route-b-certlog-fallback',
+      seed: 1234,
+      steps: [
+        { command: 'certlog grid.test', afterMs: 800, expectFacts: ['harvested:emails:>=2'] },
+      ],
+      expectedGoalsSatisfied: true,
+    },
+  ],
+});
+
+// a2-first-blood — vsftpd backdoor + Netcat reverse shell.
+const a2FirstBloodWorld = (seed: number): World => ({
+  seed,
+  hosts: [
+    {
+      id: 'grid-gw',
+      ip: '192.0.2.10',
+      hostname: 'gw.grid.test',
+      os: 'Linux 4.18',
+      inScope: true,
+      services: [
+        { port: 21, proto: 'tcp', name: 'ftp', product: 'vsftpd', version: '2.3.4', state: 'open' },
+      ],
+    },
+    {
+      id: 'attacker',
+      ip: '198.51.100.7',
+      hostname: 'attacker.test',
+      os: 'Linux',
+      inScope: false,
+      services: [],
+    },
+  ],
+  vulns: [
+    {
+      id: 'vsftpd-backdoor',
+      hostId: 'grid-gw',
+      servicePort: 21,
+      kind: 'backdoor',
+      description: 'vsftpd 2.3.4 backdoor',
+      moduleRef: 'exploit/unix/ftp/vsftpd_234_backdoor',
+    },
+  ],
+  creds: [],
+  edges: [],
+  dns: [],
+  web: { rootUrl: 'http://gw.grid.test/', nodes: [], links: [], index: new Map() },
+  docs: [],
+  defenses: { hostIds: [] },
+  pinned: [],
+});
+
+registerMission({
+  id: 'a2-first-blood',
+  title: 'First Blood',
+  brief: 'Open a shell on grid-gw via the vsftpd backdoor and catch the reverse connection.',
+  primer:
+    'The vsftpd 2.3.4 backdoor opens a shell on port 6200/tcp after a smiley-face login. Use `msf use exploit/unix/ftp/vsftpd_234_backdoor`, set RHOST, run. Then `nc -lvnp 6200` to catch the reverse shell.',
+  report: '## First Shell\n- describe the session',
+  lab: 'Run vsftpd-class exploit against your Metasploitable 2 lab.',
+  world: a2FirstBloodWorld,
+  goals: { kind: 'session_open', hostId: 'grid-gw', type: 'shell' },
+  scope: {
+    inScope: ['grid-gw'],
+    outOfScope: ['attacker'],
+    permitted: ['msf', 'nc', 'nmap'],
+    forbidden: [],
+    dataRule: 'no exfiltration',
+  },
+  transcripts: [
+    {
+      name: 'route-a-msf-then-nc',
+      seed: 1234,
+      steps: [
+        { command: 'msf use exploit/unix/ftp/vsftpd_234_backdoor', afterMs: 200 },
+        { command: 'msf set RHOST 192.0.2.10', afterMs: 100 },
+        { command: 'msf run', afterMs: 2000, expectFacts: ['session:open:grid-gw', 'exploit:vsftpd:grid-gw'] },
+      ],
+      expectedGoalsSatisfied: true,
+    },
+  ],
+});
+
+// a2-intercept — Burp proxy price tamper.
+const a2InterceptWorld = (seed: number): World => ({
+  seed,
+  hosts: [
+    {
+      id: 'shop',
+      ip: '192.0.2.10',
+      hostname: 'shop.grid.test',
+      os: 'Linux',
+      inScope: true,
+      services: [{ port: 80, proto: 'tcp', name: 'http', product: 'nginx', state: 'open' }],
+    },
+  ],
+  vulns: [],
+  creds: [],
+  edges: [],
+  dns: [],
+  web: {
+    rootUrl: 'http://shop.grid.test/',
+    nodes: [
+      { path: '/', title: 'Home', body: 'welcome', snippet: 'shop sqli-test' },
+      { path: '/checkout', title: 'Checkout', body: 'price-tamper target', snippet: 'POST /checkout' },
+    ],
+    links: [],
+    index: new Map(),
+  },
+  docs: [],
+  defenses: { hostIds: [] },
+  pinned: [],
+});
+
+registerMission({
+  id: 'a2-intercept',
+  title: 'Intercept',
+  brief: 'Tamper with the checkout price via the Burp proxy.',
+  primer:
+    'Run `burp` to inspect the queue. Forward the GET, then intercept the POST /checkout. Change the price in the body to 1 and forward.',
+  report: "## Tampering\n- describe the timeline between the GET and the POST\n- list the header(s) you set",
+  lab: 'Use mitmproxy / Burp Suite in your lab to repeat on a real shop endpoint.',
+  world: a2InterceptWorld,
+  goals: { kind: 'fact_found', key: 'tampered:body' },
+  scope: {
+    inScope: ['shop'],
+    outOfScope: [],
+    permitted: ['burp', 'nmap'],
+    forbidden: [],
+    dataRule: 'no real purchase',
+  },
+  transcripts: [
+    {
+      name: 'route-a',
+      seed: 1234,
+      steps: [
+        { command: 'burp intercept', afterMs: 200 },
+        { command: 'burp forward', afterMs: 100 },
+        { command: 'burp intercept', afterMs: 200 },
+        { command: 'burp set header X-Tamper 1', afterMs: 100 },
+        { command: 'burp forward', afterMs: 100, expectFacts: ['tampered:body'] },
+      ],
+      expectedGoalsSatisfied: true,
+    },
+  ],
+});
+
+// a2-dump — gobuster + sqlmap.
+const a2DumpWorld = (seed: number): World => ({
+  seed,
+  hosts: [
+    {
+      id: 'app',
+      ip: '192.0.2.10',
+      hostname: 'app.grid.test',
+      os: 'Linux',
+      inScope: true,
+      services: [{ port: 80, proto: 'tcp', name: 'http', product: 'nginx', state: 'open' }],
+    },
+  ],
+  vulns: [],
+  creds: [],
+  edges: [],
+  dns: [],
+  web: {
+    rootUrl: 'http://app.grid.test/',
+    nodes: [
+      { path: '/', title: 'Home', body: 'app', snippet: '' },
+      { path: '/admin', title: 'Admin', body: 'admin', snippet: 'sqli sqli' },
+      { path: '/login', title: 'Login', body: 'login', snippet: '' },
+      { path: '/api', title: 'API', body: 'api', snippet: '' },
+    ],
+    links: [],
+    index: new Map(),
+  },
+  docs: [],
+  defenses: { hostIds: [] },
+  pinned: [],
+});
+
+registerMission({
+  id: 'a2-dump',
+  title: 'Dump',
+  brief: 'Find hidden directories and dump the app database.',
+  primer:
+    'Run `gobuster -m dir -u http://192.0.2.10/`. Then `sqlmap -u http://192.0.2.10/admin --dbs --tables`.',
+  report: '## Dump\n- directories\n- databases / tables',
+  lab: 'Repeat on a DVWA / bWAPP install.',
+  world: a2DumpWorld,
+  goals: {
+    all: [
+      { kind: 'fact_found', key: 'gobuster-hit:/admin' },
+      { kind: 'fact_found', key: 'sqlmap-databases:>=1' },
+    ],
+  },
+  scope: {
+    inScope: ['app'],
+    outOfScope: [],
+    permitted: ['gobuster', 'sqlmap', 'nmap'],
+    forbidden: [],
+    dataRule: 'no exfiltration',
+  },
+  transcripts: [
+    {
+      name: 'route-a',
+      seed: 1234,
+      steps: [
+        {
+          command: 'gobuster -m dir -u http://192.0.2.10/',
+          afterMs: 1500,
+          expectFacts: ['gobuster-hit:/admin'],
+        },
+        {
+          command: 'sqlmap -u http://192.0.2.10/admin --dbs --tables',
+          afterMs: 2500,
+          expectFacts: ['sqlmap-databases:>=1'],
+        },
+      ],
+      expectedGoalsSatisfied: true,
+    },
+  ],
+});
+
+// a2-patient-zero — IR mechanics. Capture memory, then power off.
+const a2PatientZeroWorld = (seed: number): World => ({
+  seed,
+  hosts: [
+    {
+      id: 'patient',
+      ip: '192.0.2.10',
+      hostname: 'patient.grid.test',
+      os: 'Linux',
+      inScope: true,
+      services: [],
+    },
+    {
+      id: 'lateral',
+      ip: '192.0.2.11',
+      hostname: 'lateral.grid.test',
+      os: 'Linux',
+      inScope: true,
+      services: [],
+    },
+  ],
+  vulns: [],
+  creds: [],
+  edges: [{ from: 'patient', to: 'lateral', kind: 'subnet-192.0.2.0/24' }],
+  dns: [],
+  web: { rootUrl: 'http://gw.grid.test/', nodes: [], links: [], index: new Map() },
+  docs: [],
+  defenses: { hostIds: [] },
+  pinned: [],
+});
+
+registerMission({
+  id: 'a2-patient-zero',
+  title: 'Patient Zero',
+  brief: 'Contain the breach. Capture memory of patient before powering it off.',
+  primer:
+    'IR sequence: memory_captured → host_powered_off → isolate → contain. Out-of-order fails the goal.',
+  report: '## IR Steps\n- memory first, then power off\n- isolate / contain before patching',
+  lab: 'Run a Volatility + IR exercise on a real compromised host.',
+  world: a2PatientZeroWorld,
+  goals: {
+    all: [
+      { kind: 'fact_found', key: 'ir:memory_captured:patient' },
+      { kind: 'fact_found', key: 'ir:host_powered_off:patient' },
+      { kind: 'fact_found', key: 'ir:isolate:patient' },
+      { kind: 'fact_found', key: 'ir:contain:patient' },
+    ],
+  },
+  scope: {
+    inScope: ['patient', 'lateral'],
+    outOfScope: [],
+    permitted: ['volatility', 'meridian', 'nmap'],
+    forbidden: [],
+    dataRule: 'preserve evidence',
+  },
+  transcripts: [
+    {
+      name: 'route-a-correct-order',
+      seed: 1234,
+      steps: [
+        { command: 'ir memory_captured patient', afterMs: 200, expectFacts: ['ir:memory_captured:patient'] },
+        { command: 'ir host_powered_off patient', afterMs: 200, expectFacts: ['ir:host_powered_off:patient'] },
+        { command: 'ir isolate patient', afterMs: 100, expectFacts: ['ir:isolate:patient'] },
+        { command: 'ir contain patient', afterMs: 100, expectFacts: ['ir:contain:patient'] },
+      ],
+      expectedGoalsSatisfied: true,
+    },
+    {
+      name: 'negative-1-out-of-order',
+      seed: 1234,
+      steps: [
+        { command: 'ir host_powered_off patient', afterMs: 200, expectFacts: ['ir:host_powered_off:patient'] },
+      ],
+      expectedGoalsSatisfied: false,
+    },
+  ],
+});
+
+// a2-block-it — write a Snort rule that blocks without FPs.
+const a2BlockItWorld = (seed: number): World => ({
+  seed,
+  hosts: [
+    {
+      id: 'gw',
+      ip: '192.0.2.10',
+      os: 'Linux',
+      inScope: true,
+      services: [],
+    },
+  ],
+  vulns: [],
+  creds: [],
+  edges: [],
+  dns: [],
+  web: { rootUrl: 'http://gw.grid.test/', nodes: [], links: [], index: new Map() },
+  docs: [],
+  defenses: { hostIds: [] },
+  pinned: [],
+});
+
+registerMission({
+  id: 'a2-block-it',
+  title: 'Block It',
+  brief: 'Write a Snort rule that detects the beacon without alerting on benign traffic.',
+  primer:
+    'Run `snort -T -c rules.txt` to validate. The rule should match the C2 beacon (TCP PSH|ACK to port 4444) and not flag normal SSH/HTTP.',
+  report: '## Snort Rule\n- the rule text\n- FP rate against the benign corpus',
+  lab: 'Run Snort against Metasploitable pcap and a benign pcap; compute the rate.',
+  world: a2BlockItWorld,
+  goals: { kind: 'rule_written', id: 'beacon-blocker' },
+  scope: {
+    inScope: ['gw'],
+    outOfScope: [],
+    permitted: ['snort', 'tshark'],
+    forbidden: [],
+    dataRule: 'no exfiltration',
+  },
+  transcripts: [
+    {
+      name: 'route-a',
+      seed: 1234,
+      steps: [
+        {
+          command: 'snort -T -c rules.txt',
+          afterMs: 1500,
+          expectFacts: ['rule:beacon-blocker', 'rule-fp-ok'],
+        },
+      ],
+      expectedGoalsSatisfied: true,
+    },
+  ],
+});
+
 export {};

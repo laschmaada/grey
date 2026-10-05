@@ -6,6 +6,11 @@
 import '../sims/nmap.js';
 import '../sims/msf.js';
 import '../sims/tshark.js';
+import '../sims/gobuster.js';
+import '../sims/sqlmap.js';
+import '../sims/certlog.js';
+import '../sims/netcat.js';
+import '../sims/burp.js';
 import '../engine/msfconsole.js';
 import '../engine/meridian.js';
 import '../content/missions_runtime.js';

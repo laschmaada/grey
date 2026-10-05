@@ -58,16 +58,19 @@ export function evaluateAtom(atom: GoalAtom, ctx: GoalContext): boolean {
             e.type === 'command' &&
             (e.payload as Record<string, unknown>)['scan'] === atom.scan,
         );
-    case 'session_open': {
-      const all = ctx.store.campaign.concat(ctx.store.session?.events ?? []);
-      return all.some(
-        (e) =>
-          e.type === 'session_open' &&
-          (e.payload as Record<string, unknown>)['hostId'] === atom.hostId &&
-          (atom.type === undefined ||
-            (e.payload as Record<string, unknown>)['type'] === atom.type),
+    case 'session_open':
+      return (
+        ctx.knownFacts.has(`session:${atom.hostId}`) ||
+        ctx.store.campaign
+          .concat(ctx.store.session?.events ?? [])
+          .some(
+            (e) =>
+              e.type === 'session_open' &&
+              (e.payload as Record<string, unknown>)['hostId'] === atom.hostId &&
+              (atom.type === undefined ||
+                (e.payload as Record<string, unknown>)['type'] === atom.type),
+          )
       );
-    }
     case 'credential_obtained':
       return ctx.knownFacts.has(`cred:${atom.user}@${atom.hostId}`);
     case 'file_retrieved':

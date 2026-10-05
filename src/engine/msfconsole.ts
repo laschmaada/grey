@@ -127,7 +127,7 @@ const VSFTPD_BACKDOOR: ModuleDef = {
     ctx.clock.advance(2000);
     const rhost = ctx.options['RHOST'] ?? 'unknown';
     return {
-      facts: [`session:open:${rhost}`, `exploit:vsftpd:${rhost}`],
+      facts: [`session:${rhost}`, `exploit:vsftpd:${rhost}`],
       events: [
         {
           id: 0,

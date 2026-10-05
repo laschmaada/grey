@@ -28,12 +28,12 @@ export const MISSIONS: readonly MissionStub[] = [
   { id: 'a1-twenty-alarms', act: 1, track: 'shared', title: 'Twenty Alarms', payoutBase: 140, requiredTools: ['wireshark'], status: 'complete', milestone: 'M5' },
   { id: 'a1-knock-knock', act: 1, track: 'shared', title: 'Knock Knock', payoutBase: 160, requiredTools: [], status: 'complete', milestone: 'M5' },
   // Act 2
-  { id: 'a2-harvest', act: 2, track: 'shared', title: 'Harvest', payoutBase: 200, requiredTools: ['theharvester'], status: 'stub', milestone: 'M6' },
-  { id: 'a2-first-blood', act: 2, track: 'shared', title: 'First Blood', payoutBase: 280, requiredTools: ['netcat'], status: 'stub', milestone: 'M6' },
-  { id: 'a2-intercept', act: 2, track: 'shared', title: 'Intercept', payoutBase: 260, requiredTools: ['burp'], status: 'stub', milestone: 'M6' },
-  { id: 'a2-dump', act: 2, track: 'shared', title: 'Dump', payoutBase: 240, requiredTools: ['gobuster', 'sqlmap'], status: 'stub', milestone: 'M6' },
-  { id: 'a2-patient-zero', act: 2, track: 'shared', title: 'Patient Zero', payoutBase: 260, requiredTools: ['wireshark'], status: 'stub', milestone: 'M6' },
-  { id: 'a2-block-it', act: 2, track: 'shared', title: 'Block It', payoutBase: 260, requiredTools: ['snort'], status: 'stub', milestone: 'M6' },
+  { id: 'a2-harvest', act: 2, track: 'shared', title: 'Harvest', payoutBase: 200, requiredTools: ['theharvester'], status: 'complete', milestone: 'M6' },
+  { id: 'a2-first-blood', act: 2, track: 'shared', title: 'First Blood', payoutBase: 280, requiredTools: ['netcat'], status: 'complete', milestone: 'M6' },
+  { id: 'a2-intercept', act: 2, track: 'shared', title: 'Intercept', payoutBase: 260, requiredTools: ['burp'], status: 'complete', milestone: 'M6' },
+  { id: 'a2-dump', act: 2, track: 'shared', title: 'Dump', payoutBase: 240, requiredTools: ['gobuster', 'sqlmap'], status: 'complete', milestone: 'M6' },
+  { id: 'a2-patient-zero', act: 2, track: 'shared', title: 'Patient Zero', payoutBase: 260, requiredTools: ['wireshark'], status: 'complete', milestone: 'M6' },
+  { id: 'a2-block-it', act: 2, track: 'shared', title: 'Block It', payoutBase: 260, requiredTools: ['snort'], status: 'complete', milestone: 'M6' },
   // Act 3
   { id: 'a3-dark-ship', act: 3, track: 'shared', title: 'The Dark Ship', payoutBase: 400, requiredTools: ['sherlock'], status: 'stub', milestone: 'M7' },
   { id: 'a3-honeytoken', act: 3, track: 'shared', title: 'The Honeytoken', payoutBase: 400, requiredTools: [], status: 'stub', milestone: 'M7' },

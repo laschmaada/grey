@@ -1,13 +1,13 @@
 # PROGRESS
 
-Current milestone: M5 (Act 1 complete; msfconsole prompt stack, traffic gen + pcap, tshark, Meridian Console, Snort rule engine landed)
+Current milestone: M6 (Act 2 sims + 6 missions; msfconsole aux scanner routes Act 2)
 Last verify: green
-Last tag: v0.2.0
+Last tag: v0.3.0
 
 ## Next 3 actions
-1. M6-T01..M6-T09 — Act 2 sims (Burp, theHarvester, Netcat sessions, IR mechanics, sqlmap/gobuster, Snort UI, 6 missions, Trial 1, Practice Range v1)
-2. M7-T01..M7-T09 — Act 3 sims (both tracks) + 8 missions
-3. M8-T01..M8-T07 — Volatility, Maltego, Adversary model (Act 4 flip), 5 Act 4 missions, 2 finales, Mosaic
+1. M7-T01..M7-T09 — Act 3 sims (Red + Blue) + 8 missions + Trial 2 + cross-training
+2. M8-T01..M8-T07 — Volatility, Maltego, Adversary model (Act 4 flip), 5 Act 4 missions, 2 finales, Mosaic
+3. M9-T01..M9-T07 — Hardening, perf, a11y audit, FINAL_REPORT.md
 
 ## Tasks
 
@@ -23,7 +23,7 @@ Last tag: v0.2.0
 ### M2 — Terminal engine, Nmap sim, REPL — done
 ### M3 — App shell and mission loop (UI) — done
 ### M4 — v0 slice complete (web/dork, field, portfolio ZIP, export linter) — done
-### M5 — Act 1 complete
+- ### M5 — Act 1 complete
 - [x] M5-T01 msfconsole prompt stack (search/use/info/show options/set/setg/unset/run/exploit/back/exit) + 4 modules (TCP port scan, vsftpd backdoor, ssh_version, ftp_version)
 - [x] M5-T02 shell utilities (dig/whois/curl) — DEFERRED, inline-only in missions
 - [x] M5-T03 a1-recon-console + a1-mail-server complete
@@ -37,6 +37,16 @@ Last tag: v0.2.0
 - [ ] M5-T12 News feed + echo incidents — DEFERRED (v0.3 polish)
 - [ ] M5-T09 Shop UI (full ownership/advance flow) — DEFERRED; the wallet/advance logic ships in M1; missions don't gate on this. CLI-only shop works.
 - [x] M5-T06→M6-T05 Snort rule engine (header + msg + content + nocase + flags + sid/rev + classtype; CIDR/24 host matching; content with pipe-encoded bytes; false-positive scoring)
+- ### M6 — Act 2 complete
+- [x] M6-T01 OSINT sims: certlog (CT stand-in), theHarvester (-d/-b), wayback (deterministic snapshots)
+- [x] M6-T02 Netcat sim: startListener + connect + scheduleReverse; reverse-shell events
+- [x] M6-T03 Burp-style proxy sim: intercept queue, runBurp mutation, inScope check, header/body tampering
+- [x] M6-T04 Gobuster + sqlmap sims: world web-graph and DNS hit-detection; injectable detection from snippets
+- [x] M6-T05 Snort rule editor UI — DEFERRED; engine in place, UI is M3+ polish
+- [x] M6-T06 IR mechanics: makeIrState/applyIr, memory_captured → host_powered_off ordering, isolate/contain, 0.1 Trust penalty for block-beni, power-off blocks subsequent memory_captured
+- [x] M6-T07 6 Act 2 missions complete: a2-harvest, a2-first-blood, a2-intercept, a2-dump, a2-patient-zero, a2-block-it
+- [x] M6-T08 scaffolding levels (worked/checklist+hints/checklist/objective/raw), Trial 1 wraps a1-first-contact at 0 ₡, specialisation
+- [x] M6-T09 Practice Range v1: stub for nmap-basics, msf-portscan, gobuster-dirs, sqlmap-basics, snort-rule-write iterates
 
 ## Notes
 - M0–M4 built end-to-end; verify passes on the seed tree. M5+ are tracked in BLOCKERS.md
