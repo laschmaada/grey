@@ -570,8 +570,487 @@ registerMission({
 });
 
 // ---------------------------------------------------------------------------
-// M6-T07: Act 2 missions.
+// M7-T03 + T06 + T08: Act 3 missions (2 shared + 4 Red + 4 Blue).
 // ---------------------------------------------------------------------------
+
+// a3-dark-ship (shared) — AIS timeline with a 12h gap.
+const a3DarkShipWorld = (seed: number): World => ({
+  seed,
+  hosts: [
+    { id: 'analyst', ip: '192.0.2.10', os: 'Linux', inScope: true, services: [] },
+  ],
+  vulns: [],
+  creds: [],
+  edges: [],
+  dns: [],
+  web: { rootUrl: 'http://gw.grid.test/', nodes: [], links: [], index: new Map() },
+  docs: [],
+  defenses: { hostIds: [] },
+  pinned: [],
+});
+
+registerMission({
+  id: 'a3-dark-ship',
+  title: 'The Dark Ship',
+  brief: 'A trawler (Nadia K) is dark over the cable route at the incident hour. Confirm it.',
+  primer:
+    'Run `ais mmsi-538123456` to view the vessel timeline. A "dark ship" is a vessel whose AIS beacon went silent for >6 hours. Verify the gap.',
+  report: '## AIS Findings\n- mmsi\n- gap window\n- position before / after',
+  lab: 'Run an AIS query against MarineTraffic or AIS Hub for a real vessel.',
+  world: a3DarkShipWorld,
+  goals: { kind: 'fact_found', key: 'ais:dark-ship:mmsi-538123456' },
+  scope: {
+    inScope: ['analyst'],
+    outOfScope: [],
+    permitted: ['ais', 'nmap'],
+    forbidden: [],
+    dataRule: 'no exfiltration',
+  },
+  transcripts: [
+    {
+      name: 'route-a-ais',
+      seed: 1234,
+      steps: [
+        { command: 'ais mmsi-538123456', afterMs: 1000, expectFacts: ['ais:dark-ship:mmsi-538123456'] },
+      ],
+      expectedGoalsSatisfied: true,
+    },
+  ],
+});
+
+// a3-honeytoken (shared) — recognise the planted key.
+const a3HoneytokenWorld = (seed: number): World => ({
+  seed,
+  hosts: [
+    { id: 'analyst', ip: '192.0.2.10', os: 'Linux', inScope: true, services: [] },
+  ],
+  vulns: [],
+  creds: [],
+  edges: [],
+  dns: [],
+  web: { rootUrl: 'http://gw.grid.test/', nodes: [], links: [], index: new Map() },
+  docs: [],
+  defenses: { hostIds: [] },
+  pinned: [],
+});
+
+registerMission({
+  id: 'a3-honeytoken',
+  title: 'The Honeytoken',
+  brief: 'A planted key shows up in a Meridian alert. Recognise it before treating it as evidence.',
+  primer:
+    'Honeytoken is a key the defender plants to detect a breach. When the key shows up in an alert, that is the *signal* — the key is not real evidence. Confirm the alert is the planted honeytoken.',
+  report: '## Honeytoken\n- the planted key\n- where it was found',
+  lab: 'Use canarytokens.org or a similar canary service.',
+  world: a3HoneytokenWorld,
+  goals: { kind: 'fact_found', key: 'honeytoken:recognized' },
+  scope: {
+    inScope: ['analyst'],
+    outOfScope: [],
+    permitted: ['meridian'],
+    forbidden: [],
+    dataRule: 'no exfiltration',
+  },
+  transcripts: [
+    {
+      name: 'route-a-recognise',
+      seed: 1234,
+      steps: [
+        { command: 'meridian triage 1 --tp', afterMs: 50, expectFacts: ['honeytoken:recognized'] },
+      ],
+      expectedGoalsSatisfied: true,
+    },
+  ],
+});
+
+// a3r-migrate-dump (Red) — Meterpreter migrate + hashdump.
+const a3rMigrateDumpWorld = (seed: number): World => ({
+  seed,
+  hosts: [
+    { id: 'grid-gw', ip: '192.0.2.10', hostname: 'gw.grid.test', os: 'Windows 10', inScope: true, services: [] },
+  ],
+  vulns: [],
+  creds: [],
+  edges: [],
+  dns: [],
+  web: { rootUrl: 'http://gw.grid.test/', nodes: [], links: [], index: new Map() },
+  docs: [],
+  defenses: { hostIds: [] },
+  pinned: [],
+});
+
+registerMission({
+  id: 'a3r-migrate-dump',
+  title: 'Migrate & Dump',
+  brief: 'Open a meterpreter session, migrate into lsass, and dump hashes.',
+  primer:
+    'After running the vsftpd backdoor (a2-first-blood), the session lives in the FTP process. Migrate into a stable system process before dumping hashes. Use `meterpreter ps; migrate <pid>; hashdump`.',
+  report: '## Meterpreter\n- the chosen PID\n- the dumped hashes',
+  lab: 'Migrate into lsass.exe in a real lab and run `hashdump`.',
+  world: a3rMigrateDumpWorld,
+  goals: {
+    all: [
+      { kind: 'session_open', hostId: 'grid-gw', type: 'shell' },
+      { kind: 'fact_found', key: 'hashdump:grid-gw' },
+    ],
+  },
+  scope: {
+    inScope: ['grid-gw'],
+    outOfScope: [],
+    permitted: ['meterpreter', 'msf', 'nmap'],
+    forbidden: [],
+    dataRule: 'no exfiltration',
+  },
+  transcripts: [
+    {
+      name: 'route-a',
+      seed: 1234,
+      steps: [
+        { command: 'msf run', afterMs: 2000, expectFacts: ['session:grid-gw'] },
+        { command: 'meterpreter ps', afterMs: 500 },
+        { command: 'meterpreter migrate 200', afterMs: 200 },
+        { command: 'meterpreter hashdump', afterMs: 1500, expectFacts: ['hashdump:grid-gw'] },
+      ],
+      expectedGoalsSatisfied: true,
+    },
+  ],
+});
+
+// a3r-pivot (Red) — route add, internal network reach.
+const a3rPivotWorld = (seed: number): World => ({
+  seed,
+  hosts: [
+    { id: 'grid-gw', ip: '192.0.2.10', hostname: 'gw.grid.test', os: 'Windows 10', inScope: true, services: [] },
+    { id: 'internal', ip: '198.51.100.20', hostname: 'internal.grid.test', os: 'Linux', inScope: false, services: [{ port: 22, proto: 'tcp', name: 'ssh', state: 'open' }] },
+  ],
+  vulns: [],
+  creds: [],
+  edges: [{ from: 'grid-gw', to: 'internal', kind: 'subnet-198.51.100.0/24' }],
+  dns: [],
+  web: { rootUrl: 'http://gw.grid.test/', nodes: [], links: [], index: new Map() },
+  docs: [],
+  defenses: { hostIds: [] },
+  pinned: [],
+});
+
+registerMission({
+  id: 'a3r-pivot',
+  title: 'Pivot',
+  brief: 'Pivot from grid-gw to the internal host through a route add.',
+  primer:
+    'Once you have a session on grid-gw, add a route through it: `meterpreter route add 198.51.100.0/24 <grid-gw-session-id>`. Then nmap the internal host through the meterpreter pivot.',
+  report: '## Pivot\n- route\n- internal host fingerprint',
+  lab: 'Use Chisel or SSH -L / -R for port forwarding; run `proxychains nmap`.',
+  world: a3rPivotWorld,
+  goals: { kind: 'session_open', hostId: 'internal', type: 'shell' },
+  scope: {
+    inScope: ['grid-gw'],
+    outOfScope: ['internal'],
+    permitted: ['meterpreter', 'msf', 'nmap'],
+    forbidden: [],
+    dataRule: 'no exfiltration',
+  },
+  transcripts: [
+    {
+      name: 'route-a',
+      seed: 1234,
+      steps: [
+        { command: 'msf run', afterMs: 2000, expectFacts: ['session:grid-gw'] },
+        { command: 'meterpreter route add 198.51.100.0/24 1', afterMs: 200 },
+        { command: 'meterpreter run auxiliary/scanner/portscan/tcp', afterMs: 1500, expectFacts: ['session:internal'] },
+      ],
+      expectedGoalsSatisfied: true,
+    },
+  ],
+});
+
+// a3r-callback (Red) — Sliver implant + callback.
+const a3rCallbackWorld = (seed: number): World => ({
+  seed,
+  hosts: [
+    { id: 'grid-gw', ip: '192.0.2.10', hostname: 'gw.grid.test', os: 'Windows 10', inScope: true, services: [] },
+  ],
+  vulns: [],
+  creds: [],
+  edges: [],
+  dns: [],
+  web: { rootUrl: 'http://gw.grid.test/', nodes: [], links: [], index: new Map() },
+  docs: [],
+  defenses: { hostIds: [] },
+  pinned: [],
+});
+
+registerMission({
+  id: 'a3r-callback',
+  title: 'The Callback',
+  brief: 'Generate a Sliver implant, deliver it to grid-gw, and observe the callback.',
+  primer:
+    'Use `sliver generate --http --save /tmp/imp.bin` and the Sliver C2 console to deliver the implant. Watch the callback in the Wireshark capture.',
+  report: '## Sliver\n- implant path\n- callback timestamp',
+  lab: 'Use Sliver in your lab; capture the callback with Wireshark.',
+  world: a3rCallbackWorld,
+  goals: { kind: 'fact_found', key: 'sliver:callback:grid-gw' },
+  scope: {
+    inScope: ['grid-gw'],
+    outOfScope: [],
+    permitted: ['sliver', 'tshark', 'nmap'],
+    forbidden: [],
+    dataRule: 'no exfiltration',
+  },
+  transcripts: [
+    {
+      name: 'route-a',
+      seed: 1234,
+      steps: [
+        { command: 'sliver generate --http --save /tmp/imp.bin', afterMs: 500 },
+        { command: 'sliver listeners http', afterMs: 500 },
+        { command: 'sliver use imp-1', afterMs: 1000, expectFacts: ['sliver:callback:grid-gw'] },
+      ],
+      expectedGoalsSatisfied: true,
+    },
+  ],
+});
+
+// a3r-cracked (Red) — Hydra + John to recover creds.
+const a3rCrackedWorld = (seed: number): World => ({
+  seed,
+  hosts: [
+    { id: 'grid-gw', ip: '192.0.2.10', hostname: 'gw.grid.test', os: 'Windows 10', inScope: true, services: [] },
+  ],
+  vulns: [],
+  creds: [],
+  edges: [],
+  dns: [],
+  web: { rootUrl: 'http://gw.grid.test/', nodes: [], links: [], index: new Map() },
+  docs: [],
+  defenses: { hostIds: [] },
+  pinned: [],
+});
+
+registerMission({
+  id: 'a3r-cracked',
+  title: 'Cracked',
+  brief: 'Brute-force the SSH user and crack the dumped hashes.',
+  primer:
+    'Use hydra against the SSH service on grid-gw. Then run john against the dumped SAM hashes to recover plaintext passwords.',
+  report: '## Cracked\n- hydra hit\n- john output',
+  lab: 'Use hydra / john against a real user list and a hash dump.',
+  world: a3rCrackedWorld,
+  goals: {
+    all: [
+      { kind: 'credential_obtained', user: 'analyst', hostId: 'grid-gw' },
+      { kind: 'credential_obtained', user: 'admin', hostId: 'grid-gw' },
+    ],
+  },
+  scope: {
+    inScope: ['grid-gw'],
+    outOfScope: [],
+    permitted: ['hydra', 'john', 'nmap'],
+    forbidden: [],
+    dataRule: 'no exfiltration',
+  },
+  transcripts: [
+    {
+      name: 'route-a',
+      seed: 1234,
+      steps: [
+        { command: 'hydra -l analyst -P wordlist.txt ssh://192.0.2.10', afterMs: 1500, expectFacts: ['cred:analyst@grid-gw'] },
+        { command: 'john --wordlist=rockyou.txt hashes.txt', afterMs: 1500, expectFacts: ['cred:admin@grid-gw'] },
+      ],
+      expectedGoalsSatisfied: true,
+    },
+  ],
+});
+
+// a3b-persisted (Blue) — Wazuh FIM detects persistence.
+const a3bPersistedWorld = (seed: number): World => ({
+  seed,
+  hosts: [
+    { id: 'patient', ip: '192.0.2.10', hostname: 'patient.grid.test', os: 'Windows 10', inScope: true, services: [] },
+  ],
+  vulns: [],
+  creds: [],
+  edges: [],
+  dns: [],
+  web: { rootUrl: 'http://gw.grid.test/', nodes: [], links: [], index: new Map() },
+  docs: [],
+  defenses: { hostIds: ['patient'] },
+  pinned: [],
+});
+
+registerMission({
+  id: 'a3b-persisted',
+  title: 'Persisted',
+  brief: 'A scheduled task was created on patient. Find it via Wazuh FIM.',
+  primer:
+    'Wazuh watches C:\\Windows\\System32\\Tasks for changes. Run `wazuh fim query` and look for a task named `UpdaterSvc` (Rook).',
+  report: '## FIM\n- the persistence mechanism\n- the task name',
+  lab: 'On a real Windows VM, set a baseline with Wazuh, then create a scheduled task and observe the alert.',
+  world: a3bPersistedWorld,
+  goals: { kind: 'fact_found', key: 'wazuh:persistence:patient' },
+  scope: {
+    inScope: ['patient'],
+    outOfScope: [],
+    permitted: ['wazuh', 'meridian', 'nmap'],
+    forbidden: [],
+    dataRule: 'preserve evidence',
+  },
+  transcripts: [
+    {
+      name: 'route-a',
+      seed: 1234,
+      steps: [
+        { command: 'wazuh fim query /Windows/System32/Tasks', afterMs: 1500, expectFacts: ['wazuh:persistence:patient'] },
+      ],
+      expectedGoalsSatisfied: true,
+    },
+  ],
+});
+
+// a3b-fleet-sweep (Blue) — Velociraptor VQL across the fleet.
+const a3bFleetSweepWorld = (seed: number): World => ({
+  seed,
+  hosts: [
+    { id: 'analyst', ip: '192.0.2.10', os: 'Linux', inScope: true, services: [] },
+  ],
+  vulns: [],
+  creds: [],
+  edges: [],
+  dns: [],
+  web: { rootUrl: 'http://gw.grid.test/', nodes: [], links: [], index: new Map() },
+  docs: [],
+  defenses: { hostIds: [] },
+  pinned: [],
+});
+
+registerMission({
+  id: 'a3b-fleet-sweep',
+  title: 'Fleet Sweep',
+  brief: 'Run a VQL query across the 50-host fleet. Find hosts with port 445 open.',
+  primer:
+    '`velociraptor "SELECT hostname, port FROM services() WHERE port == 445"`. Find hosts with SMB exposed to the corporate network.',
+  report: '## Fleet\n- host count\n- candidate hosts',
+  lab: 'Run Velociraptor on a real fleet.',
+  world: a3bFleetSweepWorld,
+  goals: { kind: 'fact_found', key: 'fleet:smb-open' },
+  scope: {
+    inScope: ['analyst'],
+    outOfScope: [],
+    permitted: ['velociraptor', 'meridian'],
+    forbidden: [],
+    dataRule: 'no exfiltration',
+  },
+  transcripts: [
+    {
+      name: 'route-a-vql',
+      seed: 1234,
+      steps: [
+        {
+          command: 'velociraptor "SELECT hostname, port FROM services() WHERE port == 445"',
+          afterMs: 1500,
+          expectFacts: ['fleet:smb-open'],
+        },
+      ],
+      expectedGoalsSatisfied: true,
+    },
+  ],
+});
+
+// a3b-heartbeat (Blue) — beacon detection puzzle.
+const a3bHeartbeatWorld = (seed: number): World => ({
+  seed,
+  hosts: [
+    { id: 'analyst', ip: '192.0.2.10', os: 'Linux', inScope: true, services: [] },
+    { id: 'attacker', ip: '198.51.100.7', os: 'Linux', inScope: false, services: [] },
+  ],
+  vulns: [],
+  creds: [],
+  edges: [],
+  dns: [],
+  web: { rootUrl: 'http://gw.grid.test/', nodes: [], links: [], index: new Map() },
+  docs: [],
+  defenses: { hostIds: [] },
+  pinned: [],
+});
+
+registerMission({
+  id: 'a3b-heartbeat',
+  title: 'Heartbeat',
+  brief: 'A beacon is calling home from a compromised host. Find it in the pcap.',
+  primer:
+    'Use `tshark -q -z conv,tcp` to see the conversation list. Look for a long-running TCP/PSH|ACK conversation. Confirm the destination + port.',
+  report: '## Beacon\n- source host\n- destination\n- destination port',
+  lab: 'Capture a Sliver C2 callback in Wireshark; spot the beacon.',
+  world: a3bHeartbeatWorld,
+  goals: { kind: 'fact_found', key: 'beacon:detected' },
+  scope: {
+    inScope: ['analyst'],
+    outOfScope: ['attacker'],
+    permitted: ['tshark', 'meridian'],
+    forbidden: [],
+    dataRule: 'preserve evidence',
+  },
+  transcripts: [
+    {
+      name: 'route-a',
+      seed: 1234,
+      steps: [
+        { command: 'tshark -q -z conv,tcp', afterMs: 1500, expectFacts: ['beacon:detected'] },
+      ],
+      expectedGoalsSatisfied: true,
+    },
+  ],
+});
+
+// a3b-follow-money (Blue) — chain explorer / blockchain trace.
+const a3bFollowMoneyWorld = (seed: number): World => ({
+  seed,
+  hosts: [
+    { id: 'analyst', ip: '192.0.2.10', os: 'Linux', inScope: true, services: [] },
+  ],
+  vulns: [],
+  creds: [],
+  edges: [],
+  dns: [],
+  web: { rootUrl: 'http://gw.grid.test/', nodes: [], links: [], index: new Map() },
+  docs: [],
+  defenses: { hostIds: [] },
+  pinned: [],
+});
+
+registerMission({
+  id: 'a3b-follow-money',
+  title: 'Follow the Money',
+  brief: 'Trace the ransom wallet to the charter-fuel payment. K3.',
+  primer:
+    'The chain explorer sim shows a wallet. Follow the transactions to the consolidation into the charter-fuel payment. Confirm K3 = `ransom_to_charter`.',
+  report: '## K3\n- the wallet address\n- the consolidation transaction',
+  lab: 'Use a real chain explorer for a public testnet.',
+  world: a3bFollowMoneyWorld,
+  goals: { kind: 'intel_verified', claim: 'ransom_to_charter' },
+  scope: {
+    inScope: ['analyst'],
+    outOfScope: [],
+    permitted: ['chain', 'meridian'],
+    forbidden: [],
+    dataRule: 'no exfiltration',
+  },
+  transcripts: [
+    {
+      name: 'route-a-verify',
+      seed: 1234,
+      steps: [
+        { command: 'chain trace wallet 0xdeadbeef', afterMs: 1500 },
+        { command: 'meridian triage 1 --tp', afterMs: 50 },
+        { command: 'meridian triage 2 --tp', afterMs: 50 },
+        { command: 'meridian triage 3 --tp', afterMs: 50 },
+      ],
+      expectedGoalsSatisfied: true,
+    },
+  ],
+});
+
+export {};
 
 // a2-harvest — theHarvester sim, find emails for the target domain.
 const a2HarvestWorld = (seed: number): World => ({

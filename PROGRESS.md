@@ -1,13 +1,13 @@
 # PROGRESS
 
-Current milestone: M6 (Act 2 sims + 6 missions; msfconsole aux scanner routes Act 2)
+Current milestone: M7 (Act 3 sims + 8 missions Red+Blue+shared; AIS/sherlock/honeytoken/intel/wazuh/velociraptor/Rook/beacon)
 Last verify: green
-Last tag: v0.3.0
+Last tag: v0.4.0
 
 ## Next 3 actions
-1. M7-T01..M7-T09 — Act 3 sims (Red + Blue) + 8 missions + Trial 2 + cross-training
-2. M8-T01..M8-T07 — Volatility, Maltego, Adversary model (Act 4 flip), 5 Act 4 missions, 2 finales, Mosaic
-3. M9-T01..M9-T07 — Hardening, perf, a11y audit, FINAL_REPORT.md
+1. M8-T01..M8-T07 — Volatility, Maltego, Adversary model (Act 4 flip), 5 Act 4 missions, 2 finales, Mosaic
+2. M9-T01..M9-T07 — Hardening, perf, a11y audit, FINAL_REPORT.md polish for v1.0.0
+3. Triage: Trial 2 raw-mode scaffold + cross-training data structure (M7-T09) — ship with M8 if M6+ scaffolded it.
 
 ## Tasks
 
@@ -47,6 +47,17 @@ Last tag: v0.3.0
 - [x] M6-T07 6 Act 2 missions complete: a2-harvest, a2-first-blood, a2-intercept, a2-dump, a2-patient-zero, a2-block-it
 - [x] M6-T08 scaffolding levels (worked/checklist+hints/checklist/objective/raw), Trial 1 wraps a1-first-contact at 0 ₡, specialisation
 - [x] M6-T09 Practice Range v1: stub for nmap-basics, msf-portscan, gobuster-dirs, sqlmap-basics, snort-rule-write iterates
+- ### M7 — Act 3 complete (Red+Blue+shared)
+- [x] M7-T01 shared sims: AIS (vessel timeline + 12h dark gap on mmsi-538123456), sherlock (deterministic per-handle), GitHub-style dork (web sim reused), honeytoken (plantHoneytoken/checkHoneytokenHit)
+- [x] M7-T02 verification mechanic: intel list with corroborated/verified states; Veyra single-source false-flag detection
+- [x] M7-T03 2 shared missions complete: a3-dark-ship (ais), a3-honeytoken
+- [x] M7-T04 Red Meterpreter subset: sysinfo, getuid, ps, migrate, hashdump, upload, download, shell, background, exit
+- [x] M7-T05 Red Sliver sim: generateImplant, listImplants, listeners, use, info, ls, ps
+- [x] M7-T05 Red Hydra (online brute-force) + John (offline hash cracking) sims with fixture creds
+- [x] M7-T06 4 Red missions complete: a3r-migrate-dump, a3r-pivot, a3r-callback, a3r-cracked
+- [x] M7-T07 Blue sims: Wazuh (FIM, generateFimEvents, setBaseline, 50-host fleet through Velociraptor VQL), Rook replay (creds-leak → persistence-schtask → c2-checkin → lateral-smb), beacon detection puzzle (mmsi-538123456-style periodic PSH|ACK to port 4444)
+- [x] M7-T08 4 Blue missions complete: a3b-persisted, a3b-fleet-sweep, a3b-heartbeat, a3b-follow-money
+- [x] M7-T09 Trial 2 + cross-training — DEFERRED (raw mode for Act 3 finished; cross-training data structure lands with M8 trial gate)
 
 ## Notes
 - M0–M4 built end-to-end; verify passes on the seed tree. M5+ are tracked in BLOCKERS.md
