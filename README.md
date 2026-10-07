@@ -4,9 +4,9 @@
 
 A **simulator**, not a tool. No real scanning, no working exploits, no network calls. Every command runs entirely in the browser, against an in-memory world seeded with fictional infrastructure. Lab assignments in every mission tell you how to practice the same operation against your own Metasploitable 2 install.
 
-**Status:** v0.4.0 — 7 of 10 plan milestones complete (M0–M7). 180 tests passing. Single-file build, ~77 kB. Act 1 + Act 2 + Act 3 (Red+Blue+shared) missions all play. Act 4 + finales + hardening remain.
+**Status:** v1.0.0 — all 10 plan milestones complete (M0–M9). 30 of 30 missions complete. 214 tests passing. Single-file build, ~85 kB.
 
-See [`docs/FINAL_REPORT.md`](docs/FINAL_REPORT.md) for the full what-shipped / known-limitations / deferred write-up, and [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md) for the v0.4.0 → v1.0.0 exit criteria.
+See [`docs/FINAL_REPORT.md`](docs/FINAL_REPORT.md) for the full what-shipped / known-limitations / deferred write-up, and [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md) for the v1.0.0 ship checklist.
 
 ---
 
@@ -36,7 +36,7 @@ npm run repl -- a1-first-contact
 |---|---|---|
 | **TypeScript core engine** | RNG, virtual clock, event store, reducers, knowledge, goal engine, save envelope | `src/core/` |
 | **Terminal + sims** | nmap, msfconsole prompt stack, tshark, gobuster, sqlmap, hydra/john, sliver, meterpreter, wazuh, velociraptor, ais, sherlock, certlog, theharvester, wayback, snort rule engine, burp, netcat, meridian | `src/sims/`, `src/engine/` |
-| **Missions** | 22 of 30 missions complete: all 6 Act 1, all 6 Act 2, 2 shared Act 3 + 4 Red + 4 Blue | `src/content/missions_runtime.ts` |
+| **Missions** | All 30 missions complete: 6 Act 1, 6 Act 2, 2 shared Act 3 + 4 Red + 4 Blue, 5 Act 4, 2 finales, 1 Mosaic finale | `src/content/missions_runtime.ts`, `src/content/missions_act4.ts` |
 | **UI** | Preact, hash router, mission loop, terminal view, hub | `src/ui/` |
 | **Build** | Vite + vite-plugin-singlefile → `dist/index.html` | `vite.config.ts` |
 
@@ -48,7 +48,7 @@ npm run repl -- a1-first-contact
 tsc --noEmit             # 0 type errors
 eslint .                 # 0 lint errors (D6/D14 bans: no Date.now, no Math.random,
                          #   no fetch / WebSocket / innerHTML in core/engine/sims/systems/content)
-vitest run               # 180 unit + transcript + UI + boot tests
+vitest run               # 214 unit + transcript + UI + boot + a11y + perf + save tests
 boundaries               # core/engine/sims/systems/content don't import UI; no DOM access
 content-lint             # mission stubs are present and well-formed
 economy-check            # §9 tables match the 9,270 ₡ grand total per track
@@ -58,7 +58,7 @@ size-check               # bundle ≤ 2.5 MB; 0 external URLs in the artifact
 
 The plan requires every gate to be green before any commit. Cutting a gate requires a §10 scope-cut ladder entry in `BLOCKERS.md`.
 
-## What ships at v0.4.0 (Act 1, 2, 3 Red+Blue+shared)
+## What ships at v1.0.0 (every act + finales + hardening)
 
 | Act | Mission | Tools |
 |---|---|---|
@@ -84,8 +84,16 @@ The plan requires every gate to be green before any commit. Cutting a gate requi
 | 3 Blue | a3b-fleet-sweep — Velociraptor VQL | velociraptor, meridian |
 | 3 Blue | a3b-heartbeat — beacon detection | tshark, meridian |
 | 3 Blue | a3b-follow-money — chain trace → K3 | (chain stub), meridian |
+| 4 | a4-incoming — predict the next strike | maltego, nmap |
+| 4 | a4-packet-storm — find beacon + write Snort rule | tshark, snort, nmap |
+| 4 | a4-cold-memory — Volatility on the patient image | volatility, nmap |
+| 4 | a4-hold-the-line — strict Snort rule | snort, nmap |
+| 4 | a4-attribution — graph + K2 verification | maltego, nmap |
+| Finale | f-red-zero-day — full chain, raw, noise live | msf, meterpreter |
+| Finale | f-blue-zero-day — behavioural threshold rule | meridian |
+| Finale | f-mosaic — true / official / incomplete endings | mosaic |
 
-**Remaining (M8 + M9):** Act 4 (Volatility, Maltego, Adversary model with the flip test), the 2 finales, the Mosaic board, hardening, FINAL_REPORT polish. Tracked in `docs/RELEASE_CHECKLIST.md` and `docs/FINAL_REPORT.md`.
+**All 30 missions `status: 'complete'`.**
 
 ## Lab setup (optional but recommended)
 
