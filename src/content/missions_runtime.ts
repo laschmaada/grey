@@ -49,6 +49,10 @@ export interface MissionGoalStatus {
 export interface LoadedMission {
   id: string;
   title: string;
+  brief: string;
+  primer: string;
+  report: string;
+  lab: string;
   world: World;
   goals: GoalExpr;
   scope: ScopeCard;
@@ -69,6 +73,10 @@ export function loadMission(id: string, seed = 1): LoadedMission {
   return {
     id,
     title: def.title,
+    brief: def.brief,
+    primer: def.primer,
+    report: def.report,
+    lab: def.lab,
     world,
     goals: def.goals,
     scope: def.scope,

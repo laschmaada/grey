@@ -44,6 +44,17 @@
           scroll-behavior: auto !important;
         }
       }
+      .gh-mission-grid {
+        display: grid;
+        grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.4fr);
+        height: 100%;
+      }
+      @media (max-width: 900px) {
+        .gh-mission-grid {
+          grid-template-columns: 1fr;
+          grid-template-rows: minmax(220px, 0.5fr) 1fr;
+        }
+      }
     </style>
   </head>
   <body>

@@ -9,7 +9,7 @@ import { tokenize } from './tokenizer.js';
 import { allNames, get, type HandlerCtx } from './registry.js';
 import { flagStatus, NOT_EMULATED, personalityFor } from './personality.js';
 import type { OutputSpan } from './output.js';
-import type { Host, World } from '../core/types.js';
+import type { Host, ScopeCard, World } from '../core/types.js';
 
 export interface SessionOpts {
   clock: HandlerCtx['clock'];
@@ -27,12 +27,25 @@ export class Session {
   private nextJobId = 1;
   /** mission world — set by the Mission screen on entry. */
   world?: World;
+  /** Number of scope strikes (out-of-scope touches, forbidden methods). */
+  scopeStrikes = 0;
+  /** Reason log for scope strikes. */
+  scopeLog: Array<{ at: number; reason: string }> = [];
+  /** The active mission's scope card. */
+  scopeCard?: ScopeCard;
+  /** Optional listeners for fact/scope changes — the briefing panel subscribes. */
+  onChange?: () => void;
 
   constructor(public readonly opts: SessionOpts) {}
 
   /** Wire the current mission's world into the session. */
   setWorld(world: World): void {
     this.world = world;
+  }
+
+  /** Attach the mission's scope card so dispatches can be checked. */
+  attachScopeCard(card: ScopeCard): void {
+    this.scopeCard = card;
   }
 
   /** Resolve a host from the world's address space (IP or hostname). */
@@ -130,9 +143,32 @@ export class Session {
     const ctx: HandlerCtx = {
       clock: this.opts.clock,
       cwd: '/',
-      emit: this.opts.emit,
+      emit: (type, payload) => {
+        this.opts.emit(type, payload);
+        // Scope tracking: every command event whose payload references an
+        // out-of-scope host or forbidden method is a strike.
+        if (type === 'command' && this.scopeCard) {
+          const card = this.scopeCard;
+          const hostId = (payload as Record<string, unknown>)['hostId'] as string | undefined;
+          const method = (payload as Record<string, unknown>)['method'] as string | undefined;
+          if (hostId && card.outOfScope.includes(hostId)) {
+            this.scopeStrikes++;
+            this.scopeLog.push({ at: this.opts.clock.now(), reason: `out-of-scope touch: ${hostId}` });
+            this.onChange?.();
+          } else if (method && card.forbidden.includes(method)) {
+            this.scopeStrikes++;
+            this.scopeLog.push({ at: this.opts.clock.now(), reason: `forbidden method: ${method}` });
+            this.onChange?.();
+          }
+        }
+      },
       knownFacts: this.opts.knownFacts,
-      writeFact: this.opts.writeFact,
+      writeFact: (k, v) => {
+        // Only mark as changed when the fact is new (Set.add returns the set)
+        const before = this.opts.knownFacts.has(k);
+        this.opts.writeFact(k, v);
+        if (!before) this.onChange?.();
+      },
       world: this.world,
       // Resolve targetHost from the last non-flag token. nmap-style args
       // accept a bare IP or hostname as the last positional.
