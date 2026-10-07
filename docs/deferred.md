@@ -27,3 +27,13 @@ Items explicitly deferred per CODING_PLAN §0.6 and §10. Listed here so we don'
   the bundle below the 2.5 MB cap with headroom for v0.2 sims).
 - **Link-graph transforms** — Maltego-style transforms are deferred; the table view is
   in scope when M8 lands.
+## Mission briefing panel — deferred v2 polish
+- Resizable drag handle between the briefing and the terminal (so the player
+  can give 70% to the terminal during long outputs).
+- Auto-hide on first command (collapses the panel to a tab so the terminal
+  takes the full viewport during fast iteration).
+
+## Mission briefing panel — known live-cut items (v0)
+- "Routes" collapse, by-game (the 2+1 reference transcripts) — deferred.
+- "Facts discovered" panel — deferred.
+- Click-to-focus on a goal in the checklist (auto-scrolls terminal) — deferred.
