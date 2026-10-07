@@ -46,15 +46,15 @@ export const MISSIONS: readonly MissionStub[] = [
   { id: 'a3b-heartbeat', act: 3, track: 'blue', title: 'Heartbeat', payoutBase: 440, requiredTools: ['wireshark'], status: 'complete', milestone: 'M7' },
   { id: 'a3b-follow-money', act: 3, track: 'blue', title: 'Follow the Money', payoutBase: 450, requiredTools: [], status: 'complete', milestone: 'M7' },
   // Act 4
-  { id: 'a4-incoming', act: 4, track: 'shared', title: 'Incoming', payoutBase: 550, requiredTools: [], status: 'stub', milestone: 'M8' },
-  { id: 'a4-packet-storm', act: 4, track: 'shared', title: 'Packet Storm', payoutBase: 600, requiredTools: ['wireshark'], status: 'stub', milestone: 'M8' },
-  { id: 'a4-cold-memory', act: 4, track: 'shared', title: 'Cold Memory', payoutBase: 650, requiredTools: ['volatility'], status: 'stub', milestone: 'M8' },
-  { id: 'a4-hold-the-line', act: 4, track: 'shared', title: 'Hold the Line', payoutBase: 600, requiredTools: ['snort'], status: 'stub', milestone: 'M8' },
-  { id: 'a4-attribution', act: 4, track: 'shared', title: 'The Attribution', payoutBase: 600, requiredTools: ['maltego'], status: 'stub', milestone: 'M8' },
+  { id: 'a4-incoming', act: 4, track: 'shared', title: 'Incoming', payoutBase: 550, requiredTools: [], status: 'complete', milestone: 'M8' },
+  { id: 'a4-packet-storm', act: 4, track: 'shared', title: 'Packet Storm', payoutBase: 600, requiredTools: ['wireshark'], status: 'complete', milestone: 'M8' },
+  { id: 'a4-cold-memory', act: 4, track: 'shared', title: 'Cold Memory', payoutBase: 650, requiredTools: ['volatility'], status: 'complete', milestone: 'M8' },
+  { id: 'a4-hold-the-line', act: 4, track: 'shared', title: 'Hold the Line', payoutBase: 600, requiredTools: ['snort'], status: 'complete', milestone: 'M8' },
+  { id: 'a4-attribution', act: 4, track: 'shared', title: 'The Attribution', payoutBase: 600, requiredTools: ['maltego'], status: 'complete', milestone: 'M8' },
   // Finale
-  { id: 'f-red-zero-day', act: 5, track: 'red', title: 'Zero Day (Red)', payoutBase: 1200, requiredTools: [], status: 'stub', milestone: 'M8' },
-  { id: 'f-blue-zero-day', act: 5, track: 'blue', title: 'Zero Day (Blue)', payoutBase: 1200, requiredTools: [], status: 'stub', milestone: 'M8' },
-  { id: 'f-mosaic', act: 5, track: 'shared', title: 'The Mosaic', payoutBase: 300, requiredTools: [], status: 'stub', milestone: 'M8' },
+  { id: 'f-red-zero-day', act: 5, track: 'red', title: 'Zero Day (Red)', payoutBase: 1200, requiredTools: [], status: 'complete', milestone: 'M8' },
+  { id: 'f-blue-zero-day', act: 5, track: 'blue', title: 'Zero Day (Blue)', payoutBase: 1200, requiredTools: [], status: 'complete', milestone: 'M8' },
+  { id: 'f-mosaic', act: 5, track: 'shared', title: 'The Mosaic', payoutBase: 300, requiredTools: [], status: 'complete', milestone: 'M8' },
 ];
 
 export function findMission(id: string): MissionStub | undefined {

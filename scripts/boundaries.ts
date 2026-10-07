@@ -71,13 +71,24 @@ function checkFile(path: string): Violation[] {
   const lines = src.split('\n');
   const violations: Violation[] = [];
 
-  for (let i = 0; i < lines.length; i++) {
+  // Skip "strings" within each line so that words like `document` or `window`
+// inside user-facing help text don't trip the global checks. We strip out
+// string-literal content before applying the regex.
+function stripStrings(line: string): string {
+  return line
+    .replace(/'(?:\\.|[^'\\])*'/g, "''")
+    .replace(/"(?:\\.|[^"\\])*"/g, '""')
+    .replace(/`(?:\\.|[^`\\])*`/g, '``');
+}
+
+for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
     // Skip comment-only lines for clearer diagnostics
     const trimmed = line.trim();
     if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) {
       continue;
     }
+    const codeLine = stripStrings(line);
 
     for (const pattern of FORBIDDEN_IMPORTS) {
       if (pattern.test(line)) {
@@ -92,7 +103,7 @@ function checkFile(path: string): Violation[] {
 
     // Global checks only on non-comment lines, only in source files (not test harness)
     for (const pattern of FORBIDDEN_GLOBALS) {
-      if (pattern.test(line)) {
+      if (pattern.test(codeLine)) {
         violations.push({
           file: rel,
           line: i + 1,
