@@ -45,6 +45,7 @@ export function TerminalView(props: TerminalProps) {
   const [completions, setCompletions] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const logRef = useRef<HTMLPreElement | null>(null);
+  const lastSubmitRef = useRef<{ key: string; ts: number } | null>(null);
 
   // Greet on first mount.
   useEffect(() => {
@@ -78,16 +79,25 @@ export function TerminalView(props: TerminalProps) {
     inputRef.current?.focus();
   }, [log]);
 
-  async function submit(line: string): Promise<void> {
-    const trimmed = line.trim();
+  // Single source of truth: every "submit" call passes through here, and
+  // rapid double-fires (Enter in input + Enter bubbles to form submit)
+  // are de-duplicated by a 250 ms key+timestamp window.
+  async function submitOnce(line: string, key: string): Promise<void> {
+    const now = Date.now();
+    const last = lastSubmitRef.current;
+    if (last && last.key === key && now - last.ts < 250) return;
+    lastSubmitRef.current = { key, ts: now };
+
+    // Strip a leading prompt char if some browser quirk captured the
+    // rendered prompt as part of the typed value. Defensive only.
+    const cleaned = line.replace(/^[$#%>]\s?/, '');
+    const trimmed = cleaned.trim();
     if (trimmed.length === 0) {
-      // echo the empty prompt and do nothing
       setLog((cur) => [...cur, { kind: 'input', text: '', spans: [] }]);
       return;
     }
-    // 1. echo the input line first
+
     const inputEntry: LogEntry = { kind: 'input', text: trimmed, spans: [] };
-    // 2. dispatch
     let blocks: OutputSpan[][] = [];
     try {
       blocks = await props.session.dispatch(trimmed);
@@ -95,9 +105,6 @@ export function TerminalView(props: TerminalProps) {
       const msg = e instanceof Error ? e.message : String(e);
       blocks = [[{ kind: 'text', text: `error: ${msg}\n` }]];
     }
-    // 3. dispatch already recorded the input into session.history.
-    // 4. append: each block is its own log row, then a trailing blank row
-    //    so the next command echoes with breathing room
     const newEntries: LogEntry[] = [inputEntry];
     for (const block of blocks) {
       newEntries.push({ kind: 'output', text: '', spans: block });
@@ -109,13 +116,19 @@ export function TerminalView(props: TerminalProps) {
     setInput('');
     setHistoryCursor(-1);
     setCompletions([]);
+    // Move DOM focus back and force-clear the value to defeat double-fires.
+    if (inputRef.current) {
+      inputRef.current.value = '';
+      inputRef.current.focus();
+    }
   }
 
   function onKey(e: KeyboardEvent): void {
     if (e.key === 'Enter') {
       e.preventDefault();
       const v = inputRef.current?.value ?? '';
-      void submit(v);
+      // Key includes the value so identical lines within 250 ms are ignored.
+      void submitOnce(v, `key:${v}`);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       const h = props.session.history;
@@ -178,9 +191,10 @@ export function TerminalView(props: TerminalProps) {
       <form
         style="display:flex; padding:6px 12px; border-top: 1px solid var(--gh-border); background: var(--gh-bg);"
         onSubmit={(e) => {
+          // Enter is handled in the input's keydown. If the form fires
+          // submit anyway (browser quirk), suppress it so submitOnce
+          // doesn't get called twice.
           e.preventDefault();
-          const v = inputRef.current?.value ?? '';
-          void submit(v);
         }}
       >
         <label

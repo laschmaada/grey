@@ -70,3 +70,32 @@ describe('terminal live path: world-aware nmap', () => {
     expect(blocks[0]?.length).toBeGreaterThan(0);
   });
 });
+describe('terminal regression: leading-prompt strip + dedupe', () => {
+  it('strips a leading $ if the dispatch path ever captures it', async () => {
+    const sess = mkSession();
+    sess.setWorld(loadMission('a1-first-contact').world);
+    // Simulate the defensive strip the TerminalView applies before dispatch.
+    const stripped = ('$ nmap -sV -Pn 192.0.2.10').replace(/^[$#%>]\s?/, '').trim();
+    const blocks = await sess.dispatch(stripped);
+    const flat = blocks.map((b) => b.map((s) => s.text).join('')).join('');
+    expect(flat).toMatch(/Starting Nmap 7\.94/);
+    expect(flat).not.toMatch(/command not found/);
+  });
+
+  it('strips just the prompt char with no space', async () => {
+    const sess = mkSession();
+    sess.setWorld(loadMission('a1-first-contact').world);
+    const stripped = ('$nmap -sV -Pn 192.0.2.10').replace(/^[$#%>]\s?/, '').trim();
+    const blocks = await sess.dispatch(stripped);
+    const flat = blocks.map((b) => b.map((s) => s.text).join('')).join('');
+    expect(flat).toMatch(/Starting Nmap 7\.94/);
+  });
+
+  it('a lone prompt char becomes empty and produces no output', async () => {
+    const sess = mkSession();
+    sess.setWorld(loadMission('a1-first-contact').world);
+    const stripped = ('$').replace(/^[$#%>]\s?/, '').trim();
+    const blocks = await sess.dispatch(stripped);
+    expect(blocks.length).toBe(0);
+  });
+});
