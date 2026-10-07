@@ -9,6 +9,7 @@ import { tokenize } from './tokenizer.js';
 import { allNames, get, type HandlerCtx } from './registry.js';
 import { flagStatus, NOT_EMULATED, personalityFor } from './personality.js';
 import type { OutputSpan } from './output.js';
+import type { Host, World } from '../core/types.js';
 
 export interface SessionOpts {
   clock: HandlerCtx['clock'];
@@ -24,8 +25,25 @@ export class Session {
   promptStack: string[] = ['$ '];
   jobs: Array<{ id: number; name: string; startedAt: number }> = [];
   private nextJobId = 1;
+  /** mission world — set by the Mission screen on entry. */
+  world?: World;
 
   constructor(public readonly opts: SessionOpts) {}
+
+  /** Wire the current mission's world into the session. */
+  setWorld(world: World): void {
+    this.world = world;
+  }
+
+  /** Resolve a host from the world's address space (IP or hostname). */
+  resolveHost(target: string): Host | undefined {
+    if (!this.world) return undefined;
+    return this.world.hosts.find(
+      (h) =>
+        h.ip === target ||
+        (h.hostname !== undefined && (h.hostname === target || h.hostname.startsWith(target + '.'))),
+    );
+  }
 
   pushPrompt(p: string): void {
     this.promptStack.push(p);
@@ -115,6 +133,13 @@ export class Session {
       emit: this.opts.emit,
       knownFacts: this.opts.knownFacts,
       writeFact: this.opts.writeFact,
+      world: this.world,
+      // Resolve targetHost from the last non-flag token. nmap-style args
+      // accept a bare IP or hostname as the last positional.
+      targetHost: (() => {
+        const lastNonFlag = [...argv].reverse().find((a) => !a.startsWith('-'));
+        return lastNonFlag ? this.resolveHost(lastNonFlag) : undefined;
+      })(),
     };
     try {
       return await spec.handle(argv, ctx);

@@ -13,6 +13,7 @@
 import { register } from '../engine/registry.js';
 import { TOOL_VERSIONS } from '../content/versions.js';
 import type { Host, Service } from '../core/types.js';
+import type { OutputSpan } from '../engine/output.js';
 
 const TIMING_MS: Record<string, number> = {
   T0: 5_000,
@@ -208,15 +209,54 @@ register({
       return [[{ kind: 'text', text: 'nmap: no target specified. Try `nmap -Pn 192.0.2.10`.\n' }]];
     }
     ctx.clock.advance(TIMING_MS[args.timing] ?? 750);
-    // Emit a generic command event so transcript tests can assert on it.
+
+    // Real path: a targetHost was resolved from the mission world. Render
+    // a full nmap-style report.
+    if (ctx.targetHost && args.version) {
+      const host = ctx.targetHost;
+      const services = host.services;
+      const report: OutputSpan[] = [];
+      report.push({ kind: 'text', text: `Starting Nmap ${TOOL_VERSIONS.nmap} ( https://nmap.org ) at 2026-01-01 00:00 +0000\n` });
+      report.push({ kind: 'text', text: `Initiating Service scan against ${host.hostname ?? host.ip}\n` });
+      // host state line — emulated "Host is up"
+      report.push({ kind: 'text', text: `Note: Host is up (latency from timing template ${args.timing}).\n` });
+      // PORT table
+      report.push({ kind: 'text', text: '\nPORT      STATE  SERVICE       VERSION\n' });
+      for (const s of services) {
+        if (s.state !== 'open') continue;
+        const port = String(s.port).padEnd(9);
+        const state = s.state.padEnd(6);
+        const svc = s.name.padEnd(13);
+        const ver = s.version ?? s.product ?? '?';
+        report.push({ kind: 'text', text: `${port}${state}${svc}${ver}\n` });
+        // write knowledge: the player has now identified this service
+        ctx.writeFact(`service:${host.id}:${s.port}`);
+        ctx.writeFact(`service:${host.id}:${s.port}:version`, ver);
+        ctx.emit('service_identified', { hostId: host.id, port: s.port, name: s.name, version: ver });
+      }
+      // Not shown line (deterministic per closed-vs-filtered)
+      const closed = services.filter((s) => s.state === 'closed').length;
+      const filtered = services.filter((s) => s.state === 'filtered').length;
+      if (closed + filtered > 0) {
+        report.push({ kind: 'text', text: `Not shown: ${closed} closed, ${filtered} filtered\n` });
+      }
+      // Service Info
+      if (host.os) report.push({ kind: 'text', text: `Service Info: OS: ${host.os}\n` });
+      // Summary
+      report.push({ kind: 'text', text: `\nNmap done: 1 IP address (1 host up) in ${((TIMING_MS[args.timing] ?? 750) / 1000).toFixed(2)} seconds\n` });
+      // Emit a generic command event so transcript tests can assert on it.
+      ctx.emit('command', { tool: 'nmap', argv, timing: args.timing });
+      return [report];
+    }
+
+    // Bare dispatcher (no world wired or no -sV). Helpful for the REPL and
+    // for missions that haven't been loaded.
     ctx.emit('command', { tool: 'nmap', argv, timing: args.timing });
-    // The actual host is provided by the mission at runtime. The simulator's
-    // emulated handler returns a deterministic placeholder block; missions
-    // override by reading the world and rendering.
     const lines = [
       `Starting Nmap ${TOOL_VERSIONS.nmap} ( https://nmap.org ) at 2026-01-01 00:00 +0000`,
-      `Note: host lookup requires a mission world; this is the bare Nmap dispatcher.`,
-      `Targets: ${args.targets.join(', ')}  Timing: ${args.timing}  Ports: ${args.ports === 'all' ? 'all' : JSON.stringify(args.ports)}`,
+      ctx.targetHost
+        ? `Targets: ${args.targets.join(', ')}  Timing: ${args.timing}  Ports: ${args.ports === 'all' ? 'all' : JSON.stringify(args.ports)}`
+        : `Targets: ${args.targets.join(', ')}  Timing: ${args.timing}  Ports: ${args.ports === 'all' ? 'all' : JSON.stringify(args.ports)}  (host not in current mission world — open a mission via the Hub to scan)`,
     ];
     return [
       lines.map((l) => ({ kind: 'text' as const, text: l + '\n' })),

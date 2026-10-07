@@ -78,6 +78,9 @@ function Mission({ ctx, id }: { ctx: AppCtx; id: string }) {
     }
     try {
       const lm = loadMission(id);
+      // Wire the mission's world into the terminal session so commands like
+      // `nmap -sV <host>` can resolve targetHost against it.
+      ctx.session.setWorld(lm.world);
       const g: GoalContext = {
         world: lm.world,
         store: { campaign: [], nextId: 0 },
@@ -87,10 +90,11 @@ function Mission({ ctx, id }: { ctx: AppCtx; id: string }) {
         noise: 0,
       };
       if (evaluate(lm.goals, g)) setStatus('goal satisfied');
+      else setStatus('running');
     } catch (e) {
       setStatus(`error: ${e instanceof Error ? e.message : String(e)}`);
     }
-  }, [id, ctx.facts, status]);
+  }, [id, ctx.facts, ctx.session, status]);
 
   return (
     <div style="display:flex; flex-direction:column; height: 100%;">

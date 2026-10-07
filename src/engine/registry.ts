@@ -3,6 +3,7 @@
  */
 
 import type { OutputSpan } from './output.js';
+import type { Host, World } from '../core/types.js';
 
 export interface CommandSpec {
   name: string;
@@ -24,6 +25,10 @@ export interface HandlerCtx {
   /** knowledge layer — keys you can read/write */
   knownFacts: Set<string>;
   writeFact(key: string, value?: unknown): void;
+  /** mission world (set by the Mission screen on entry) */
+  world?: World;
+  /** the host the current command is targeting (resolved from argv) */
+  targetHost?: Host;
 }
 
 const registry = new Map<string, CommandSpec>();
